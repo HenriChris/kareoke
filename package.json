@@ -1,0 +1,14 @@
+{
+    "name": "karaoke-catalog",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Static, searchable karaoke song catalog for GitHub Pages. Builds a precomputed search index from songs.csv at build time; the browser only ever loads the generated JSON.",
+    "main": "build-index.js",
+    "scripts": {
+        "build": "node build-index.js"
+    },
+    "engines": {
+        "node": ">=16"
+    },
+    "license": "MIT"
+}

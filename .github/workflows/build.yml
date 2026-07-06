@@ -1,0 +1,70 @@
+name: Build and Deploy
+
+# Rebuilds the search index and redeploys the site whenever songs.csv or any
+# frontend/build file changes on the default branch, and whenever run
+# manually from the Actions tab.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "songs.csv"
+      - "build-index.js"
+      - "package.json"
+      - "docs/index.html"
+      - "docs/style.css"
+      - "docs/app.js"
+      - ".github/workflows/build.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build search index (docs/data.json + docs/index.json)
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          test -s docs/data.json
+          test -s docs/index.json
+          echo "Build artifacts present:"
+          ls -la docs/
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

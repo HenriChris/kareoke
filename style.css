@@ -1,0 +1,414 @@
+/* =========================================================================
+   Karaoke Catalog — stylesheet
+   -------------------------------------------------------------------------
+   Design language: a paper "song request slip" from a karaoke bar. Each
+   result reads like a ticket you'd hand to the DJ — title, artist, and a
+   punched ticket-stub badge carrying the song code. Palette stays a calm,
+   cool-toned light theme with a single saturated "stage light" magenta used
+   sparingly as the accent.
+   ========================================================================= */
+
+:root {
+  /* ---- Color tokens ---- */
+  --color-bg: #F3F4F8;
+  --color-surface: #FFFFFF;
+  --color-ink: #181924;
+  --color-muted: #6B6E7C;
+  --color-border: #E4E5EE;
+
+  --color-accent: #C81E64;
+  --color-accent-ink: #8C1148;
+  --color-accent-soft: #FBE8F1;
+  --color-accent-line: #EFB6D3;
+
+  --color-mark-bg: #FDE68A;
+  --color-mark-ink: #4A3B05;
+
+  --color-focus-ring: #4C6FFF;
+
+  /* ---- Typography tokens ---- */
+  --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', Palatino, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* ---- Layout tokens ---- */
+  --content-width: 46rem;
+  --radius-card: 10px;
+  --shadow-card: 0 1px 2px rgba(24, 25, 36, 0.04), 0 1px 1px rgba(24, 25, 36, 0.03);
+}
+
+/* ---- Reset & base ---- */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Visible, high-contrast focus ring everywhere; never remove it. */
+:focus-visible {
+  outline: 2.5px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* =========================================================================
+   Header / search bar (sticky)
+   ========================================================================= */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(243, 244, 248, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.site-header__inner {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 1rem 1.25rem 0.85rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.brand__mark {
+  color: var(--color-accent);
+  display: inline-flex;
+}
+
+.brand__title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin: 0;
+  text-align: center;
+}
+
+.search-form {
+  width: 100%;
+}
+
+.search-form__label {
+  display: block;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  margin-bottom: 0.4rem;
+}
+
+.search-form__field {
+  position: relative;
+  max-width: 32rem;
+  margin: 0 auto;
+}
+
+.search-form__icon {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-muted);
+  pointer-events: none;
+}
+
+.search-form__input {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.72rem 2.6rem 0.72rem 2.6rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-form__input::placeholder {
+  color: #9A9CAB;
+}
+
+.search-form__input:hover {
+  border-color: #C9CAD8;
+}
+
+.search-form__input:focus-visible {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 4px var(--color-accent-soft);
+  outline: none;
+}
+
+.search-form__clear {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.search-form__clear:hover {
+  background: var(--color-border);
+  color: var(--color-ink);
+}
+
+.catalog-count {
+  text-align: center;
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  letter-spacing: 0.02em;
+}
+
+/* =========================================================================
+   Main content
+   ========================================================================= */
+
+.main {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 1.1rem 1.25rem 3rem;
+  min-height: 60vh;
+}
+
+.status-line {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.results-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+/* ---- Result row: the "request slip" ---- */
+.song-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 0.8rem 0.95rem;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.song-row:hover {
+  border-color: var(--color-accent-line);
+  box-shadow: 0 3px 10px rgba(200, 30, 100, 0.08);
+  transform: translateY(-1px);
+}
+
+.song-row__text {
+  min-width: 0; /* allow ellipsis truncation inside flex child */
+}
+
+.song-row__title {
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--color-ink);
+  margin: 0 0 0.15rem;
+  overflow-wrap: anywhere;
+}
+
+.song-row__artist {
+  font-size: 0.88rem;
+  color: var(--color-muted);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.song-row__title mark,
+.song-row__artist mark {
+  background: var(--color-mark-bg);
+  color: var(--color-mark-ink);
+  padding: 0 0.06em;
+  border-radius: 2px;
+}
+
+/* Ticket-stub song code badge, styled like a punched request-slip stub. */
+.song-code {
+  flex: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--color-accent-ink);
+  background: var(--color-accent-soft);
+  border: 1px dashed var(--color-accent-line);
+  border-radius: 5px;
+  padding: 0.35rem 0.65rem;
+  min-width: 3.6rem;
+  justify-content: center;
+}
+
+/* Punched-hole notches top & bottom, matching the card background so they
+   read as cut-outs in the ticket stub. */
+.song-code::before,
+.song-code::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent-line);
+}
+
+.song-code::before {
+  top: -4px;
+}
+
+.song-code::after {
+  bottom: -4px;
+}
+
+/* ---- Empty state ---- */
+.empty-state {
+  text-align: center;
+  color: var(--color-muted);
+  padding: 2.5rem 1rem;
+  font-size: 0.95rem;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+/* =========================================================================
+   Pagination
+   ========================================================================= */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  margin-top: 1.6rem;
+}
+
+.pagination__btn {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.5rem 1.05rem;
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.pagination__btn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent-ink);
+  background: var(--color-accent-soft);
+}
+
+.pagination__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination__status {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 7rem;
+  text-align: center;
+}
+
+/* =========================================================================
+   Footer
+   ========================================================================= */
+
+.site-footer {
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  padding: 1.5rem 1.25rem 2.5rem;
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+/* =========================================================================
+   Responsive tweaks
+   ========================================================================= */
+
+@media (max-width: 30rem) {
+  .brand__title {
+    font-size: 1.2rem;
+  }
+
+  .song-row {
+    flex-wrap: wrap;
+  }
+
+  .song-code {
+    order: -1;
+    margin-bottom: 0.1rem;
+  }
+}
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  .song-row {
+    transition: none;
+  }
+  .song-row:hover {
+    transform: none;
+  }
+}
