@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Karaoke Catalog — Search 25,000 Songs</title>
+  <meta name="description" content="A fast, searchable karaoke song catalog. Find any song or artist instantly.">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 15a3.5 3.5 0 0 0 3.5-3.5V5.5a3.5 3.5 0 0 0-7 0v6A3.5 3.5 0 0 0 12 15Z" stroke="currentColor"
+              stroke-width="1.6" />
+            <path d="M7 10.5v1a5 5 0 0 0 10 0v-1M12 18.5v3M9 21.5h6" stroke="currentColor" stroke-width="1.6"
+              stroke-linecap="round" />
+          </svg>
+        </span>
+        <h1 class="brand__title">Karaoke Catalog</h1>
+      </div>
+
+      <form class="search-form" role="search" autocomplete="off" novalidate>
+        <label for="search-input" class="search-form__label">Search songs or artists</label>
+        <div class="search-form__field">
+          <svg class="search-form__icon" aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"
+            xmlns="http://www.w3.org/2000/svg">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+            <path d="m20 20-3.2-3.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+          <input type="search" id="search-input" name="q" class="search-form__input"
+            placeholder="Search by song title or artist…" spellcheck="false" autocorrect="off" autocapitalize="off">
+          <button type="button" id="clear-search" class="search-form__clear" aria-label="Clear search"
+            hidden>&times;</button>
+        </div>
+      </form>
+
+      <p class="catalog-count" id="catalog-count" aria-hidden="true"></p>
+    </div>
+  </header>
+
+  <main class="main" id="main-content">
+
+    <p class="status-line" id="status-line" role="status" aria-live="polite">Loading catalog…</p>
+
+    <ul class="results-list" id="results-list" aria-label="Song results">
+      <!-- Populated by app.js -->
+    </ul>
+
+    <p class="empty-state" id="empty-state" hidden>
+      No songs matched your search. Try a different spelling, or search by just the artist or just the title.
+    </p>
+
+    <nav class="pagination" id="pagination" aria-label="Results pages" hidden>
+      <button type="button" id="prev-page" class="pagination__btn" disabled>
+        <span aria-hidden="true">‹</span> Prev
+      </button>
+      <span class="pagination__status" id="pagination-status">Page 1 of 1</span>
+      <button type="button" id="next-page" class="pagination__btn" disabled>
+        Next <span aria-hidden="true">›</span>
+      </button>
+    </nav>
+
+  </main>
+
+  <!-- <footer class="site-footer">
+    <p>Built as a static site — no server, no database. Every search runs entirely in your browser.</p>
+  </footer> -->
+
+  <script src="app.js"></script>
+</body>
+
+</html>
