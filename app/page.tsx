@@ -8,12 +8,17 @@ import { Monoton, Manrope } from "next/font/google";
 import { songs, type Song } from "@/lib/data/songs";
 import { searchIndex } from "@/lib/data/searchIndex";
 import { tokenize } from "@/lib/normalize";
+import Modal from "@/components/Modal";
+import QRCode from "react-qr-code";
 
 const displayFont = Monoton({ subsets: ["latin"], weight: "400", variable: "--font-display" });
 const bodyFont = Manrope({ subsets: ["latin"], variable: "--font-body" });
 
+const WEBSITE_URL = "https://henrichris.github.io/kareoke";
 const NUM_ELEMENTS_PER_PAGE = 50;
 const SEARCH_DEBOUNCE_MS = 500;
+
+type ActiveModal = "spotify" | "qr" | null;
 
 /**
  * Returns songs matching every word in the query (AND semantics).
@@ -54,6 +59,7 @@ export function useDebouncedValue<T>(value: T, delayMs: number): T {
 }
 
 export default function Home() {
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [query, setQuery] = useState("");
   const [currentPageNum, setCurrentPageNum] = useState(1);
 
@@ -90,6 +96,7 @@ export default function Home() {
             <button
               type="button"
               aria-label="Connect to Spotify"
+              onClick={() => setActiveModal("spotify")}
               className="rounded-lg border border-white/10 p-2 text-neutral-300 transition-colors hover:border-fuchsia-400/40 hover:bg-fuchsia-500/10 hover:text-white focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-fuchsia-400"
             >
               <SpotifyIcon className="h-5 w-5" />
@@ -97,6 +104,7 @@ export default function Home() {
             <button
               type="button"
               aria-label="Show QR code"
+              onClick={() => setActiveModal("qr")}
               className="rounded-lg border border-white/10 p-2 text-neutral-300 transition-colors hover:border-fuchsia-400/40 hover:bg-fuchsia-500/10 hover:text-white focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-fuchsia-400"
             >
               <QRIcon className="h-5 w-5" />
@@ -183,6 +191,45 @@ export default function Home() {
           </button>
         </nav>
       </footer>
+
+      <Modal
+        open={activeModal === "spotify"}
+        title="Spotify"
+        onClose={() => setActiveModal(null)}
+      >
+        <p className="text-sm text-neutral-400">
+          Spotify integration is coming soon.
+        </p>
+      </Modal>
+
+      <Modal
+        open={activeModal === "qr"}
+        title="Scan to Join"
+        onClose={() => setActiveModal(null)}
+      >
+        <div className="flex flex-col items-center gap-5">
+          <div className="rounded-2xl bg-white p-4">
+            <QRCode
+              value={WEBSITE_URL}
+              size={220}
+            />
+          </div>
+
+          <p className="text-center text-sm text-neutral-400">
+            Scan this QR code to open the karaoke website on your phone.
+          </p>
+
+          <a
+            href={WEBSITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-fuchsia-300 hover:text-fuchsia-200"
+          >
+            {WEBSITE_URL}
+          </a>
+        </div>
+      </Modal>
+
     </div>
   );
 }
