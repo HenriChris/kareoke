@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Monoton, Manrope } from "next/font/google";
 import { songs, type Song } from "@/lib/data/songs";
 import { searchIndex } from "@/lib/data/searchIndex";
-import { tokenize } from "@/lib/normalize";
+import { normalizeString, tokenize } from "@/lib/normalize";
 import Modal from "@/components/Modal";
 import QRCode from "react-qr-code";
 import Paste from "@/components/icons/Paste";
@@ -29,7 +29,7 @@ type PlaylistLookup =
   | { status: "error"; message: string }
   | { status: "success"; matched: Song[]; total: number };
 
-export function searchSongs(query: string): Song[] {
+function searchSongs(query: string): Song[] {
 
   const queries = query
     .split(",")
@@ -68,7 +68,7 @@ export function searchSongs(query: string): Song[] {
     .map(idx => songs[idx]);
 }
 
-export function useDebouncedValue<T>(value: T, delayMs: number): T {
+function useDebouncedValue<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value);
 
   useEffect(() => {
@@ -120,18 +120,12 @@ async function fetchPlaylistTracks(playlistId: string): Promise<string[]> {
   return data.tracks ?? [];
 }
 
-// Drops "(feat. ...)", "- Remastered", "[Live]" etc so we compare on the
-// core title only. Adjust if it's too aggressive/loose for your catalog.
-function normalizeTrackTitle(title: string): string {
-  return title.split(/\s*[-([]\s*/)[0].trim();
-}
-
 function findSongByTrackTitle(trackTitle: string): Song | undefined {
-  const targetTokens = tokenize(normalizeTrackTitle(trackTitle));
+  const targetTokens = tokenize(normalizeString(trackTitle));
   if (targetTokens.length === 0) return undefined;
 
   return songs.find(song => {
-    const songTokens = tokenize(normalizeTrackTitle(song.title));
+    const songTokens = tokenize(normalizeString(song.title));
     return (
       songTokens.length === targetTokens.length &&
       songTokens.every((token, i) => token === targetTokens[i])
@@ -176,7 +170,7 @@ export default function Home() {
   const handleSpotifySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const playlistId = parseSpotifyPlaylistUrl(spotifyUrl);
+    const playlistId = parseSpotifyPlaylistUrl(spotifyUrl.trim());
     if (!playlistId) {
       setPlaylistLookup({
         status: "error",
@@ -359,7 +353,7 @@ export default function Home() {
                 value={spotifyUrl}
                 onChange={(e) => setSpotifyUrl(e.target.value)}
                 placeholder="https://open.spotify.com/playlist/..."
-                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 transition-colors focus:border-fuchsia-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30"
+                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-m text-neutral-100 placeholder:text-neutral-500 transition-colors focus:border-fuchsia-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30"
               />
 
               <button
