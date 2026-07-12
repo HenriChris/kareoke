@@ -10,41 +10,62 @@ import { searchIndex } from "@/lib/data/searchIndex";
 import { tokenize } from "@/lib/normalize";
 import Modal from "@/components/Modal";
 import QRCode from "react-qr-code";
+import Paste from "@/components/icons/Paste";
 
 const displayFont = Monoton({ subsets: ["latin"], weight: "400", variable: "--font-display" });
 const bodyFont = Manrope({ subsets: ["latin"], variable: "--font-body" });
 
 const WEBSITE_URL = "https://henrichris.github.io/kareoke";
+const SPOTIFY_API_URL = process.env.NEXT_PUBLIC_SPOTIFY_API_URL ?? "https://spotify.henrichris.dns.navy";
+const SPOTIFY_API_KEY = process.env.NEXT_PUBLIC_SPOTIFY_API_KEY ?? "";
 const NUM_ELEMENTS_PER_PAGE = 50;
 const SEARCH_DEBOUNCE_MS = 500;
 
 type ActiveModal = "spotify" | "qr" | null;
 
-/**
- * Returns songs matching every word in the query (AND semantics).
- * A query word matches a song if the title or artist contains a word
- * starting with it, so results narrow as the user keeps typing.
- */
-export function searchSongs(query: string): Song[] {
-  const queryTokens = tokenize(query);
+type PlaylistLookup =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "success"; matched: Song[]; total: number };
 
-  if (queryTokens.length === 0) {
+export function searchSongs(query: string): Song[] {
+
+  const queries = query
+    .split(",")
+    .map(q => q.trim())
+    .filter(Boolean);
+
+  if (queries.length === 0) {
     return songs;
   }
 
-  let matching = new Set<number>(searchIndex[queryTokens[0]] ?? []);
+  const results = new Set<number>();
 
-  for (const token of queryTokens.slice(1)) {
-    const candidates = new Set<number>(searchIndex[token] ?? []);
+  for (const q of queries) {
+    const queryTokens = tokenize(q);
+    if (queryTokens.length === 0) continue;
 
-    matching = new Set(
-      [...matching].filter(idx => candidates.has(idx))
-    );
+    let matching = new Set<number>(searchIndex[queryTokens[0]] ?? []);
 
-    if (matching.size === 0) return [];
+    for (const token of queryTokens.slice(1)) {
+      const candidates = new Set<number>(searchIndex[token] ?? []);
+
+      matching = new Set(
+        [...matching].filter(idx => candidates.has(idx))
+      );
+
+      if (matching.size === 0) break;
+    }
+
+    for (const idx of matching) {
+      results.add(idx);
+    }
   }
 
-  return [...matching].sort((a, b) => a - b).map(idx => songs[idx]);
+  return [...results]
+    .sort((a, b) => a - b)
+    .map(idx => songs[idx]);
 }
 
 export function useDebouncedValue<T>(value: T, delayMs: number): T {
@@ -58,10 +79,81 @@ export function useDebouncedValue<T>(value: T, delayMs: number): T {
   return debounced;
 }
 
+function parseSpotifyPlaylistUrl(input: string): string | null {
+  try {
+    // Allow users to omit the protocol.
+    const url = new URL(
+      input.startsWith("http://") || input.startsWith("https://")
+        ? input
+        : `https://${input}`
+    );
+
+    // Must be exactly open.spotify.com
+    if (url.hostname !== "open.spotify.com") {
+      return null;
+    }
+
+    // No trailing slash after the ID.
+    const match = url.pathname.match(/^\/playlist\/([A-Za-z0-9]{22})$/);
+
+    if (!match) {
+      return null;
+    }
+
+    return match[1];
+  } catch {
+    return null;
+  }
+}
+
+async function fetchPlaylistTracks(playlistId: string): Promise<string[]> {
+  const res = await fetch(
+    `${SPOTIFY_API_URL}/playlist?playlist_id=${encodeURIComponent(playlistId)}`,
+    { headers: { "X-API-Key": SPOTIFY_API_KEY } }
+  );
+
+  if (!res.ok) {
+    throw new Error(`Playlist request failed (${res.status})`);
+  }
+
+  const data: { tracks?: string[] } = await res.json();
+  return data.tracks ?? [];
+}
+
+// Drops "(feat. ...)", "- Remastered", "[Live]" etc so we compare on the
+// core title only. Adjust if it's too aggressive/loose for your catalog.
+function normalizeTrackTitle(title: string): string {
+  return title.split(/\s*[-([]\s*/)[0].trim();
+}
+
+function findSongByTrackTitle(trackTitle: string): Song | undefined {
+  const targetTokens = tokenize(normalizeTrackTitle(trackTitle));
+  if (targetTokens.length === 0) return undefined;
+
+  return songs.find(song => {
+    const songTokens = tokenize(normalizeTrackTitle(song.title));
+    return (
+      songTokens.length === targetTokens.length &&
+      songTokens.every((token, i) => token === targetTokens[i])
+    );
+  });
+}
+
+function matchPlaylistTracks(tracks: string[]): Song[] {
+  const matched = new Map<string, Song>();
+  for (const track of tracks) {
+    const song = findSongByTrackTitle(track);
+    if (song) matched.set(song.code, song);
+  }
+  return [...matched.values()];
+}
+
 export default function Home() {
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [query, setQuery] = useState("");
   const [currentPageNum, setCurrentPageNum] = useState(1);
+  const [spotifyUrl, setSpotifyUrl] = useState("");
+  const [playlistLookup, setPlaylistLookup] = useState<PlaylistLookup>({ status: "idle" });
 
   const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const filteredSongs = useMemo(() => searchSongs(debouncedQuery), [debouncedQuery]);
@@ -70,6 +162,45 @@ export default function Home() {
   const handleQueryChange = (value: string) => {
     setQuery(value);
     setCurrentPageNum(1);
+  };
+
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setSpotifyUrl(text);
+    } catch (err) {
+      console.error("Failed to read clipboard", err);
+    }
+  };
+
+  const handleSpotifySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const playlistId = parseSpotifyPlaylistUrl(spotifyUrl);
+    if (!playlistId) {
+      setPlaylistLookup({
+        status: "error",
+        message: "That doesn't look like a public Spotify playlist link.",
+      });
+      return;
+    }
+
+    setPlaylistLookup({ status: "loading" });
+
+    try {
+      const tracks = await fetchPlaylistTracks(playlistId);
+      setPlaylistLookup({
+        status: "success",
+        matched: matchPlaylistTracks(tracks),
+        total: tracks.length,
+      });
+    } catch (err) {
+      console.error("Failed to load playlist", err);
+      setPlaylistLookup({
+        status: "error",
+        message: "Couldn't load that playlist. Make sure it's public and try again.",
+      });
+    }
   };
 
   const visibleSongs = filteredSongs.slice(
@@ -197,9 +328,61 @@ export default function Home() {
         title="Spotify"
         onClose={() => setActiveModal(null)}
       >
-        <p className="text-sm text-neutral-400">
-          Spotify integration is coming soon.
-        </p>
+        <ul>
+          <li>Enter spotify playlist url</li>
+          <li>Make sure playlist is public</li>
+        </ul>
+        <form className="block w-full sm:mx-auto" onSubmit={handleSpotifySubmit}>
+          <div className="flex gap-4">
+            <label htmlFor="spotify-url" className="sr-only">
+              Spotify playlist URL
+            </label>
+            <input
+              id="spotify-url"
+              type="text"
+              value={spotifyUrl}
+              onChange={(e) => setSpotifyUrl(e.target.value)}
+              placeholder="https://open.spotify.com/playlist/0V0FIoyF7Gx2Hg0zPUBBWu"
+              className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-base text-neutral-100 placeholder:text-neutral-500 focus:border-fuchsia-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30"
+            />
+
+            <button type="button" onClick={handlePaste}>
+              <Paste />
+            </button>
+          </div>
+
+          <button type="submit" disabled={playlistLookup.status === "loading"}>
+            {playlistLookup.status === "loading" ? "Loading…" : "Enter"}
+          </button>
+        </form>
+
+        {playlistLookup.status === "error" && (
+          <p className="mt-3 text-sm text-red-400">{playlistLookup.message}</p>
+        )}
+
+        {playlistLookup.status === "success" && (
+          <div className="mt-4">
+            <p className="text-sm text-neutral-400">
+              Found {playlistLookup.matched.length} of {playlistLookup.total} tracks in
+              the karaoke list.
+            </p>
+            <ul className="mt-2 flex max-h-64 flex-col gap-2 overflow-y-auto">
+              {playlistLookup.matched.map(song => (
+                <li
+                  key={song.code}
+                  className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
+                >
+                  <span className="truncate text-neutral-100">
+                    {song.title} <span className="text-neutral-500">— {song.artist}</span>
+                  </span>
+                  <span className="ml-2 shrink-0 rounded-full border border-fuchsia-500/20 bg-fuchsia-500/10 px-2 py-0.5 font-mono text-xs text-fuchsia-300">
+                    {song.code}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </Modal>
 
       <Modal
