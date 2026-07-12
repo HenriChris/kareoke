@@ -328,61 +328,109 @@ export default function Home() {
         title="Spotify"
         onClose={() => setActiveModal(null)}
       >
-        <ul>
-          <li>Enter spotify playlist url</li>
-          <li>Make sure playlist is public</li>
-        </ul>
-        <form className="block w-full sm:mx-auto" onSubmit={handleSpotifySubmit}>
-          <div className="flex gap-4">
+        <div className="flex flex-col gap-5">
+          <ul className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-neutral-300">
+            <li className="flex gap-2">
+              <span className="text-fuchsia-300">•</span>
+              Enter a Spotify playlist URL.
+            </li>
+            <li className="flex gap-2">
+              <span className="text-fuchsia-300">•</span>
+              Make sure the playlist is public.
+            </li>
+            <li className="flex gap-2">
+              <span className="text-fuchsia-300">•</span>
+              Playlists are limited to 100 songs.
+            </li>
+          </ul>
+
+          <form
+            className="flex flex-col gap-3"
+            onSubmit={handleSpotifySubmit}
+          >
             <label htmlFor="spotify-url" className="sr-only">
               Spotify playlist URL
             </label>
-            <input
-              id="spotify-url"
-              type="text"
-              value={spotifyUrl}
-              onChange={(e) => setSpotifyUrl(e.target.value)}
-              placeholder="https://open.spotify.com/playlist/0V0FIoyF7Gx2Hg0zPUBBWu"
-              className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-base text-neutral-100 placeholder:text-neutral-500 focus:border-fuchsia-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30"
-            />
 
-            <button type="button" onClick={handlePaste}>
-              <Paste />
+            <div className="flex gap-2">
+              <input
+                id="spotify-url"
+                type="text"
+                value={spotifyUrl}
+                onChange={(e) => setSpotifyUrl(e.target.value)}
+                placeholder="https://open.spotify.com/playlist/..."
+                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 transition-colors focus:border-fuchsia-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/30"
+              />
+
+              <button
+                type="button"
+                onClick={handlePaste}
+                aria-label="Paste Spotify URL"
+                className="flex shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-3 text-neutral-300 transition-colors hover:border-fuchsia-400/40 hover:bg-fuchsia-500/10 hover:text-white focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-fuchsia-400"
+              >
+                <Paste className="h-5 w-5" />
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              disabled={playlistLookup.status === "loading"}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-neutral-200 transition-colors hover:border-fuchsia-400/40 hover:bg-fuchsia-500/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-fuchsia-400"
+            >
+              {playlistLookup.status === "loading"
+                ? "Loading..."
+                : "Import playlist"}
             </button>
-          </div>
+          </form>
 
-          <button type="submit" disabled={playlistLookup.status === "loading"}>
-            {playlistLookup.status === "loading" ? "Loading…" : "Enter"}
-          </button>
-        </form>
+          {playlistLookup.status === "error" && (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3">
+              <p className="text-sm text-red-300">
+                {playlistLookup.message}
+              </p>
+            </div>
+          )}
 
-        {playlistLookup.status === "error" && (
-          <p className="mt-3 text-sm text-red-400">{playlistLookup.message}</p>
-        )}
+          {playlistLookup.status === "success" && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-neutral-400">
+                Found{" "}
+                <span className="font-semibold text-white">
+                  {playlistLookup.matched.length}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold text-white">
+                  {playlistLookup.total}
+                </span>{" "}
+                tracks in the karaoke list.
+              </p>
 
-        {playlistLookup.status === "success" && (
-          <div className="mt-4">
-            <p className="text-sm text-neutral-400">
-              Found {playlistLookup.matched.length} of {playlistLookup.total} tracks in
-              the karaoke list.
-            </p>
-            <ul className="mt-2 flex max-h-64 flex-col gap-2 overflow-y-auto">
-              {playlistLookup.matched.map(song => (
-                <li
-                  key={song.code}
-                  className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
-                >
-                  <span className="truncate text-neutral-100">
-                    {song.title} <span className="text-neutral-500">— {song.artist}</span>
-                  </span>
-                  <span className="ml-2 shrink-0 rounded-full border border-fuchsia-500/20 bg-fuchsia-500/10 px-2 py-0.5 font-mono text-xs text-fuchsia-300">
-                    {song.code}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+              <ul
+                className="flex max-h-72 flex-col gap-2 overflow-y-auto rounded-xl border border-white/10 bg-white/5 p-2"
+              >
+                {playlistLookup.matched.map(song => (
+                  <li
+                    key={song.code}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-neutral-900/50 px-3 py-2 text-sm"
+                  >
+                    <span className="min-w-0 truncate text-neutral-100">
+                      {song.title}
+                      <span className="text-neutral-500">
+                        {" "}— {song.artist}
+                      </span>
+                    </span>
+
+                    <span
+                      className="shrink-0 rounded-full border border-fuchsia-500/20 bg-fuchsia-500/10 px-2 py-0.5 font-mono text-xs text-fuchsia-300"
+                    >
+                      {song.code}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </Modal>
 
       <Modal
