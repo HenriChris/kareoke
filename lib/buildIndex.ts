@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { parse } from "csv-parse/sync";
-import { tokenize } from "./normalize";
+import { MIN_PREFIX_LEN, tokenize } from "./normalize";
 
 interface ArtistRow {
     id: string;
@@ -33,11 +33,12 @@ function readCsv<T>(filename: string): T[] {
 }
 
 function prefixesOf(token: string): string[] {
-    const prefixes: string[] = [];
-    for (let end = 1; end <= token.length; end++) {
-        prefixes.push(token.slice(0, end));
-    }
-    return prefixes;
+  const prefixes: string[] = [];
+  for (let end = MIN_PREFIX_LEN; end <= token.length; end++) {
+    prefixes.push(token.slice(0, end));
+  }
+  if (token.length < MIN_PREFIX_LEN) prefixes.push(token);
+  return prefixes;
 }
 
 function main() {

@@ -5,6 +5,9 @@
  * - removes punctuation (keeps alphanumerics and spaces)
  * - collapses whitespace
  */
+
+export const MIN_PREFIX_LEN = 3;
+
 export function normalizeString(input: string): string {
   return input
     .normalize("NFD")
