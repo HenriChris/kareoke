@@ -273,15 +273,16 @@ export default function Home() {
             {visibleSongs.map(song => (
               <li
                 key={song.code}
-                className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-5 transition-colors hover:border-white/20 hover:bg-white/[0.07] sm:flex-row sm:items-center sm:justify-between sm:p-6"
+                className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-5 transition-colors hover:border-white/20 hover:bg-white/[0.07] sm:p-6"
               >
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <h2 className="truncate text-base font-semibold text-white sm:text-lg">
                     {song.title}
                   </h2>
                   <p className="truncate text-sm text-neutral-400">{song.artist}</p>
                 </div>
-                <p className="self-start rounded-full border border-fuchsia-500/20 bg-fuchsia-500/10 px-3 py-1 font-mono text-xs font-medium text-fuchsia-300 sm:self-center">
+
+                <p className="shrink-0 rounded-full border border-fuchsia-500/20 bg-fuchsia-500/10 px-3 py-1 font-mono text-sm font-medium text-fuchsia-300">
                   {song.code}
                 </p>
               </li>
