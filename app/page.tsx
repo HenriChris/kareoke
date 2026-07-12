@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Monoton, Manrope } from "next/font/google";
 import { songs, type Song } from "@/lib/data/songs";
 import { searchIndex } from "@/lib/data/searchIndex";
-import { normalizeString, tokenize } from "@/lib/normalize";
+import { MIN_PREFIX_LEN, tokenize } from "@/lib/normalize";
 import Modal from "@/components/Modal";
 import QRCode from "react-qr-code";
 import Paste from "@/components/icons/Paste";
@@ -30,15 +30,16 @@ type PlaylistLookup =
   | { status: "success"; matched: Song[]; total: number };
 
 function searchSongs(query: string): Song[] {
+  const trimmed = query.trim();
 
-  const queries = query
+  if (trimmed.length < MIN_PREFIX_LEN) {
+    return songs;
+  }
+
+  const queries = trimmed
     .split(",")
     .map(q => q.trim())
     .filter(Boolean);
-
-  if (queries.length === 0) {
-    return songs;
-  }
 
   const results = new Set<number>();
 
@@ -120,12 +121,18 @@ async function fetchPlaylistTracks(playlistId: string): Promise<string[]> {
   return data.tracks ?? [];
 }
 
+// Drops "(feat. ...)", "- Remastered", "[Live]" etc so we compare on the
+// core title only. Adjust if it's too aggressive/loose for your catalog.
+function normalizeTrackTitle(title: string): string {
+  return title.split(/\s*[-([]\s*/)[0].trim();
+}
+
 function findSongByTrackTitle(trackTitle: string): Song | undefined {
-  const targetTokens = tokenize(normalizeString(trackTitle));
+  const targetTokens = tokenize(normalizeTrackTitle(trackTitle));
   if (targetTokens.length === 0) return undefined;
 
   return songs.find(song => {
-    const songTokens = tokenize(normalizeString(song.title));
+    const songTokens = tokenize(normalizeTrackTitle(song.title));
     return (
       songTokens.length === targetTokens.length &&
       songTokens.every((token, i) => token === targetTokens[i])
@@ -441,7 +448,7 @@ export default function Home() {
           </div>
 
           <p className="text-center text-sm text-neutral-400">
-            Scan this QR code to open the karaoke website on your phone.
+            Scan this QR code to open the website on your phone.
           </p>
 
           <a
